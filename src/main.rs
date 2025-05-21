@@ -5,28 +5,28 @@ use sekigae3::collector::{seat::{ForSortSeat, Seat}, user::{SeatPos, User, WantS
 fn main() {
     let mut sekigae = ForSortSeat::new();
     let seat = Seat {
-        structure:
-            vec![
-                vec![true, false, true],
-                vec![false, true, false],
-                vec![true, false, true],
-            ],
+        structure: vec![
+            vec![true, true, true, true, true],
+            vec![true, true, true, true, true],
+            vec![true, true, true, true, true],
+            vec![true, true, true, true, true],
+            vec![true, true, true, true, true],
+        ],
     };
-    let mut want_seat_alice = WantSeat::new();
-    want_seat_alice.add_pos(SeatPos::new(2, 2, 1.0));
-    let mut alice = User::new(0, "Alice".to_string());
-    alice.add_want(want_seat_alice);
 
-    let mut want_seat_bob = WantSeat::new();
-    want_seat_bob.add_pos(SeatPos::new(2, 2, 1.0));
-    let mut bob = User::new(1, "Bob".to_string());
-    bob.add_want(want_seat_bob);
+    let mut users = Vec::new();
+    for i in 0..20 {
+        let name = format!("User{}", i + 1);
+        let mut want_seat = WantSeat::new();
+        // それぞれのユーザーがランダムな座席を希望する例
+        let row = (i % 5) as usize;
+        let col = ((i * 3) % 5) as usize;
+        want_seat.add_pos(SeatPos::new(row, col, 1.0));
+        let mut user = User::new(i, name);
+        user.add_want(want_seat);
+        users.push(user);
+    }
 
-    let users = vec![
-        alice,
-        bob,
-        User::new(2, "Charlie".to_string()),
-    ];
     sekigae.init(seat, users);
     println!("Initial structure: {:?}", sekigae.structure);
     println!("befor_cost {}", sekigae.total_cost());

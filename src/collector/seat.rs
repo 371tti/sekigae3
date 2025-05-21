@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 
 use super::user::User;
 
@@ -42,13 +42,14 @@ impl ForSortSeat {
         for user in &users {
             self.user_map.insert(user.number, user.clone());
         }
+        let users = self.user_map.values().collect::<Vec<_>>();
         // ユーザーを空席に順次配置
         let mut counter = 0;
         for i in 0..h {
             for j in 0..w {
                 if structure.structure[i][j] {
                     let uid = users.get(counter)
-                        .unwrap_or(&User::new(counter, "N/A".to_string()))
+                        .unwrap_or(&&User::new(usize::MAX - counter - 1, "N/A".to_string()))
                         .number;
                     self.structure[i][j] = uid;
                     self.user_pos.insert(uid, (i, j));
