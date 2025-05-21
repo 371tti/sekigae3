@@ -21,6 +21,7 @@ pub struct ForSortSeat {
     pub user_pos: HashMap<usize, (usize, usize)>,
 }
 
+
 impl ForSortSeat {
     pub fn new() -> Self {
         ForSortSeat {
@@ -58,7 +59,6 @@ impl ForSortSeat {
     }
 
     pub fn optimization(&mut self) {
-    pub fn optimization(&mut self) {
         // 初期 user_pos が空なら構築
         if self.user_pos.is_empty() {
             let no_seat = usize::MAX;
@@ -75,45 +75,37 @@ impl ForSortSeat {
         let no_seat = usize::MAX;
         let h = self.structure.len();
         let w = if h > 0 { self.structure[0].len() } else { return; };
-        let dirs = [(1,0),(-1,0),(0,1),(0,-1)];
         let mut improved = true;
         while improved {
             improved = false;
-            for i in 0..h {
-                for j in 0..w {
-                    let uid = self.structure[i][j];
-                    if uid == no_seat { continue; }
-                    for &(di,dj) in &dirs {
-                        let ni = i as isize + di;
-                        let nj = j as isize + dj;
-                        if ni<0||nj<0 { continue; }
-                        let (ni, nj) = (ni as usize, nj as usize);
-                        if ni>=h||nj>=w { continue; }
-                        let other = self.structure[ni][nj];
-                        // スワップ
-                        self.structure[i][j] = other;
-                        self.structure[ni][nj] = uid;
-                        self.user_pos.insert(uid, (ni,nj));
-                        if other != no_seat {
-                            self.user_pos.insert(other, (i,j));
-                        }
-                        let cost = self.total_cost();
-                        if cost < best {
-                            best = cost;
-                            improved = true;
-                            break;
-                        }
-                        // リバート
-                        self.structure[i][j] = uid;
-                        self.structure[ni][nj] = other;
-                        self.user_pos.insert(uid, (i,j));
-                        if other != no_seat {
-                            self.user_pos.insert(other, (ni,nj));
+            'outer: for i1 in 0..h {
+                for j1 in 0..w {
+                    let uid1 = self.structure[i1][j1];
+                    if uid1 == no_seat { continue; }
+                    for i2 in 0..h {
+                        for j2 in 0..w {
+                            if i1 == i2 && j1 == j2 { continue; }
+                            let uid2 = self.structure[i2][j2];
+                            if uid2 == no_seat { continue; }
+                            // swap
+                            self.structure[i1][j1] = uid2;
+                            self.structure[i2][j2] = uid1;
+                            self.user_pos.insert(uid1, (i2, j2));
+                            self.user_pos.insert(uid2, (i1, j1));
+                            let cost = self.total_cost();
+                            if cost < best {
+                                best = cost;
+                                improved = true;
+                                break 'outer;
+                            }
+                            // revert
+                            self.structure[i1][j1] = uid1;
+                            self.structure[i2][j2] = uid2;
+                            self.user_pos.insert(uid1, (i1, j1));
+                            self.user_pos.insert(uid2, (i2, j2));
                         }
                     }
-                    if improved { break; }
                 }
-                if improved { break; }
             }
         }
     }
