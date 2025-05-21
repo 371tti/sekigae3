@@ -59,7 +59,7 @@ impl ForSortSeat {
         }
     }
 
-    pub fn optimization(&mut self) {
+    pub fn optimize(&mut self) {
         // 初期 user_pos が空なら構築
         if self.user_pos.is_empty() {
             let no_seat = usize::MAX;
