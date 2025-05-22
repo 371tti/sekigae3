@@ -6,6 +6,32 @@ use serde::Deserialize;
 /// ユーザーの番号、名前、希望座席を持つ
 /// ユーザーは複数の希望座席を持つことができる
 /// ここでの希望席はすべての要素において考慮されます。
+/// 
+/// # example
+/// デシリアライズ時の構造例
+/// ```json
+/// {
+///    "number": 1,
+///    "name": "John Doe",
+///    "want": [ 
+///        {
+///            "poss": [
+///               {
+///                "x": 0,
+///                "y": 0,
+///                "weight": 1.0
+///               }
+///           ],
+///            "with": [
+///               {
+///                   "number": 2,
+///                   "weight": 1.0
+///               }
+///            ]
+///        }
+///    ]
+/// }
+/// ```
 #[derive(Clone, Deserialize)]
 pub struct User {
     pub number: usize,
