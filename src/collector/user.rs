@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
+use serde::Deserialize;
+
 /// ユーザー構造体
 /// ユーザーの番号、名前、希望座席を持つ
 /// ユーザーは複数の希望座席を持つことができる
 /// ここでの希望席はすべての要素において考慮されます。
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct User {
     pub number: usize,
     pub name: String,
@@ -14,20 +16,20 @@ pub struct User {
 /// ユーザーの希望座席構造体
 /// ユーザーが希望する座席の位置と、他のユーザーとの関係を持つ
 /// ここでの希望席は1つが必ず考慮されます。
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct WantSeat {
     pub poss: Vec<SeatPos>,
     pub with: Vec<WithUser>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct SeatPos {
     pub x: usize,
     pub y: usize,
     pub weight: f32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize)]
 pub struct WithUser {
     pub number: usize,
     pub weight: f32,

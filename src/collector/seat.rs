@@ -1,7 +1,10 @@
 use std::{collections::HashMap, usize};
 
+use serde::Deserialize;
+
 use super::user::User;
 
+#[derive(Deserialize)]
 pub struct Seat {
     /// 座席形状を表す2次元ベクタ
     /// trueは座席があることを示し、falseは座席がないことを示す
@@ -9,12 +12,20 @@ pub struct Seat {
     pub structure: Vec<Vec<bool>>,
 }
 
+pub struct ResponseSeat {
+    pub result: Vec<Vec<SeatType>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum SeatType {
+    Empty,
+    User(usize),
+    Filled,
+}
+
 pub struct ForSortSeat {
-    /// 座席状態保持
-    /// maxは座席がないことを示す
-    /// usizeにはUserのnumberが入る
-    /// 例: [[0, 1], [max, 2]] は、左上にUser 0、右上にUser 1、右下にUser 2がいることを示す
-    pub structure: Vec<Vec<usize>>,
+    /// 座席状態保持（Enumで表現）
+    pub structure: Vec<Vec<SeatType>>,
     /// ユーザーと番号のマップ
     pub user_map: HashMap<usize, User>,
     /// ユーザーの座席位置
@@ -34,25 +45,25 @@ impl ForSortSeat {
     pub fn init(&mut self, structure: Seat, users: Vec<User>) {
         let h = structure.structure.len();
         let w = if h > 0 { structure.structure[0].len() } else { return; };
-        // 初期化
-        self.structure = vec![vec![usize::MAX; w]; h];
+        // 初期化: デフォルトは Empty
+        self.structure = vec![vec![SeatType::Empty; w]; h];
         self.user_map.clear();
         self.user_pos.clear();
         // ユーザー登録
         for user in &users {
             self.user_map.insert(user.number, user.clone());
         }
-        let users = self.user_map.values().collect::<Vec<_>>();
-        // ユーザーを空席に順次配置
         let mut counter = 0;
         for i in 0..h {
             for j in 0..w {
                 if structure.structure[i][j] {
-                    let uid = users.get(counter)
-                        .unwrap_or(&&User::new(usize::MAX - counter - 1, "N/A".to_string()))
-                        .number;
-                    self.structure[i][j] = uid;
-                    self.user_pos.insert(uid, (i, j));
+                    if let Some(user) = users.get(counter) {
+                        let uid = user.number;
+                        self.structure[i][j] = SeatType::User(uid);
+                        self.user_pos.insert(uid, (i, j));
+                    } else {
+                        self.structure[i][j] = SeatType::Filled;
+                    }
                     counter += 1;
                 }
             }
@@ -62,18 +73,16 @@ impl ForSortSeat {
     pub fn optimize(&mut self) {
         // 初期 user_pos が空なら構築
         if self.user_pos.is_empty() {
-            let no_seat = usize::MAX;
             for (i, row) in self.structure.iter().enumerate() {
-                for (j, &uid) in row.iter().enumerate() {
-                    if uid != no_seat {
-                        self.user_pos.insert(uid, (i, j));
+                for (j, seat) in row.iter().enumerate() {
+                    if let SeatType::User(uid) = seat {
+                        self.user_pos.insert(*uid, (i, j));
                     }
                 }
             }
         }
         // 現在の合計コスト
         let mut best = self.total_cost();
-        let no_seat = usize::MAX;
         let h = self.structure.len();
         let w = if h > 0 { self.structure[0].len() } else { return; };
         let mut improved = true;
@@ -81,29 +90,29 @@ impl ForSortSeat {
             improved = false;
             'outer: for i1 in 0..h {
                 for j1 in 0..w {
-                    let uid1 = self.structure[i1][j1];
-                    if uid1 == no_seat { continue; }
-                    for i2 in 0..h {
-                        for j2 in 0..w {
-                            if i1 == i2 && j1 == j2 { continue; }
-                            let uid2 = self.structure[i2][j2];
-                            if uid2 == no_seat { continue; }
-                            // swap
-                            self.structure[i1][j1] = uid2;
-                            self.structure[i2][j2] = uid1;
-                            self.user_pos.insert(uid1, (i2, j2));
-                            self.user_pos.insert(uid2, (i1, j1));
-                            let cost = self.total_cost();
-                            if cost < best {
-                                best = cost;
-                                improved = true;
-                                break 'outer;
+                    if let SeatType::User(uid1) = self.structure[i1][j1] {
+                        for i2 in 0..h {
+                            for j2 in 0..w {
+                                if i1 == i2 && j1 == j2 { continue; }
+                                if let SeatType::User(uid2) = self.structure[i2][j2] {
+                                    // swap
+                                    self.structure[i1][j1] = SeatType::User(uid2);
+                                    self.structure[i2][j2] = SeatType::User(uid1);
+                                    self.user_pos.insert(uid1, (i2, j2));
+                                    self.user_pos.insert(uid2, (i1, j1));
+                                    let cost = self.total_cost();
+                                    if cost < best {
+                                        best = cost;
+                                        improved = true;
+                                        break 'outer;
+                                    }
+                                    // revert
+                                    self.structure[i1][j1] = SeatType::User(uid1);
+                                    self.structure[i2][j2] = SeatType::User(uid2);
+                                    self.user_pos.insert(uid1, (i1, j1));
+                                    self.user_pos.insert(uid2, (i2, j2));
+                                }
                             }
-                            // revert
-                            self.structure[i1][j1] = uid1;
-                            self.structure[i2][j2] = uid2;
-                            self.user_pos.insert(uid1, (i1, j1));
-                            self.user_pos.insert(uid2, (i2, j2));
                         }
                     }
                 }
