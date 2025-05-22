@@ -33,6 +33,10 @@ impl SekigaeContext {
             s.admin_session = key.clone();
         });
     }
+
+    pub fn create_sekigae(&self, body: &str) -> Sekigae {
+        
+    }
 }
 
 
@@ -52,9 +56,9 @@ fn main() {
 
     kurosabi.get("/api/:id/info", |mut c| async move {
         let id = c.req.path.get_field("id").unwrap_or("".to_string());
-        {
-            c.c.key_set("1w", &mut c);
-        }
+        // Clone the Arc context first to avoid borrowing `c` immutably
+        let context = Arc::clone(&c.c);
+        context.key_set("1w", &mut c);
         // 借用が解除された後に `c` を返す
         c
     });
