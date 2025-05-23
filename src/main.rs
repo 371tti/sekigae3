@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use dashmap::DashMap;
-use kurosabi::{kurosabi::Context, Kurosabi};
+use kurosabi::{kurosabi::Context, response::Res, Kurosabi};
 use rand::{distributions::Alphanumeric, rngs::OsRng, Rng};
-use sekigae3::collector::Sekigae;
+use sekigae3::{api::ApiStruct, collector::Sekigae};
 
 struct SekigaeContext {
     pub sekigae_sessions: DashMap<String, Sekigae>,
@@ -34,8 +34,19 @@ impl SekigaeContext {
         });
     }
 
-    pub fn create_sekigae(&self, body: &str) -> Sekigae {
-        
+    fn create_sekigae(&self, body: serde_json::Value) -> Result<Sekigae, serde_json::Error> {
+        let body_deserialized: ApiStruct = serde_json::from_value(body)?;
+
+        let sekigae = body_deserialized.convert();
+        Ok(Sekigae::new(
+            sekigae.0,
+            &self.generate_key(),
+        ))
+    }
+
+    pub async fn create(&self, c: &mut Context<Arc<SekigaeContext>>) -> Result<(), String> {
+        let body = c.req.body_json().await.map_err(|_| "Failed to parse JSON".to_string())?;
+
     }
 }
 
