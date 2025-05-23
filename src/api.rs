@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::collector::{seat::SeatStructure, user::User};
 
@@ -19,4 +19,20 @@ impl ApiStruct {
             user_set,
         )
     }
+}
+
+#[derive(Serialize)]
+pub enum IDResult {
+    Err(String),
+    ID(String),
+}
+
+impl IDResult {
+    pub fn new(result: Result<String/* id */, String>) -> Self {
+        match result {
+            Ok(id) => IDResult::ID(id),
+            Err(err) => IDResult::Err(err),
+        }
+    }
+    
 }
