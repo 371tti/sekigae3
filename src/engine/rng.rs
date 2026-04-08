@@ -1,4 +1,4 @@
-use getrandom::getrandom;
+use getrandom::fill;
 
 /// 疑似乱数き
 /// seed = 0 のとき、システムから乱数とる
@@ -15,7 +15,7 @@ impl SimpleRng {
         }
 
         let mut entropy = [0u8; 8];
-        let system_seed = if getrandom(&mut entropy).is_ok() {
+        let system_seed = if fill(&mut entropy).is_ok() {
             u64::from_le_bytes(entropy)
         } else {
             0xA076_1D64_78BD_642F
