@@ -1,4 +1,4 @@
-use sekigae3::solver::{ILSA, Problem, Seat};
+use sekigae3::{ILSA, Problem, Seat};
 
 fn build_demo_problem() -> Problem {
     let mut seats = Vec::new();
@@ -48,11 +48,11 @@ fn build_demo_problem() -> Problem {
         })
         .collect();
 
-    let mut want_seats = vec![Vec::<u16>::new(); n];
+    let mut want_seats = vec![Vec::<(u16, f32)>::new(); n];
     for (student, wants) in want_seats.iter_mut().enumerate() {
         let anchor = (student * 97 + 31) % n;
-        wants.push(anchor as u16);
-        wants.push(((anchor + n / 3) % n) as u16);
+        wants.push((anchor as u16, 1.0));
+        wants.push((((anchor + n / 3) % n) as u16, 0.8));
 
         let zone = match student % 3 {
             0 => &front_zone,
@@ -60,11 +60,11 @@ fn build_demo_problem() -> Problem {
             _ => &center_zone,
         };
         if !zone.is_empty() {
-            wants.push(zone[student % zone.len()]);
+            wants.push((zone[student % zone.len()], 0.6));
         }
 
-        wants.sort_unstable();
-        wants.dedup();
+        wants.sort_by_key(|(seat_id, _)| *seat_id);
+        wants.dedup_by_key(|(seat_id, _)| *seat_id);
     }
 
     let mut pair_edges = vec![Vec::<(u16, f32)>::new(); n];

@@ -10,20 +10,24 @@ const CONVERGENCE_MAX_STALL: usize = 80;
 const MIN_OUTER_PASSES: usize = 20;
 const CANDIDATE_POOL_MULTIPLIER: usize = 8;
 
-/// ILSA 探索エンジン
+/// ILSA 探索エンジン。
+///
+/// `Problem` を参照し、`solve` / `solve_candidates` で解を生成します。
 pub struct ILSA<'p> {
     problem: &'p Problem,
     rng: SimpleRng,
 }
 
 impl<'p> ILSA<'p> {
-    /// 新規インスタンス
+    /// 新規インスタンスを作成します。
+    ///
+    /// `seed = 0` の場合はシステム乱数を使って初期化します。
     pub fn new(problem: &'p Problem, seed: u64) -> Self {
         let rng = SimpleRng::new(seed);
         Self { problem, rng }
     }
 
-    /// メインソルバー
+    /// 最良候補1件を返すメインソルバー。
     /// - `budget` – 大ジャンプ回数（例: 300）
     pub fn solve(&mut self, budget: usize) -> Individual {
         self.solve_candidates(budget, 1)
@@ -32,9 +36,12 @@ impl<'p> ILSA<'p> {
             .expect("solve_candidates always returns at least one candidate")
     }
 
-    /// 十分収束した段階で複数候補を返すソルバー
+    /// 十分収束した段階で複数候補を返すソルバー。
     /// - `budget` – 最大ジャンプ回数
     /// - `max_candidates` – 返す候補数（必ずこの件数を返す）
+    ///
+    /// 返却候補は「探索履歴中でコストが良い上位N件」を選び、
+    /// 最終順序は探索履歴順に保ちます。
     pub fn solve_candidates(&mut self, budget: usize, max_candidates: usize) -> Vec<Individual> {
         let candidate_limit = max_candidates.max(1);
         let history_limit = candidate_limit

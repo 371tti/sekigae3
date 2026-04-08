@@ -44,8 +44,8 @@ impl Individual {
             }
             let seat = seat_of[student] as u16;
             let mut best = f32::INFINITY;
-            for &ws in wants {
-                let d = problem.manhattan(seat, ws) as f32;
+            for &(ws, w) in wants {
+                let d = problem.manhattan(seat, ws) as f32 * w;
                 if d < best {
                     best = d;
                 }
@@ -91,11 +91,11 @@ impl Individual {
             let new_seat = if student == a { seat_a_new } else { seat_b_new };
             let old_best = wants
                 .iter()
-                .map(|&ws| problem.manhattan(old_seat, ws) as f32)
+                .map(|&(ws, w)| problem.manhattan(old_seat, ws) as f32 * w)
                 .fold(f32::INFINITY, f32::min);
             let new_best = wants
                 .iter()
-                .map(|&ws| problem.manhattan(new_seat, ws) as f32)
+                .map(|&(ws, w)| problem.manhattan(new_seat, ws) as f32 * w)
                 .fold(f32::INFINITY, f32::min);
             delta += new_best - old_best;
         }
@@ -138,14 +138,17 @@ impl Individual {
         self.cost += delta;
     }
 
+    /// 現在の評価コストを返します。
     pub fn cost(&self) -> f32 {
         self.cost
     }
 
+    /// `seat_id -> student_id` の割り当て配列を返します。
     pub fn by_seat(&self) -> &[u16] {
         &self.by_seat
     }
 
+    /// `student_id -> seat_id` の逆引き配列を返します。
     pub fn seat_of(&self) -> &[u16] {
         &self.seat_of
     }

@@ -10,7 +10,12 @@ fn sample_problem() -> Problem {
         Seat { x: 1, y: 1 },
     ];
 
-    let want_seats = vec![vec![0], vec![1], vec![2], vec![3]];
+    let want_seats = vec![
+        vec![(0, 1.0)],
+        vec![(1, 1.0)],
+        vec![(2, 1.0)],
+        vec![(3, 1.0)],
+    ];
 
     let pair_edges = vec![
         vec![(1, 1.0), (2, 0.5)],
@@ -89,7 +94,11 @@ fn solve_candidates_prefers_unique_candidates() {
 
 #[test]
 fn solve_candidates_always_returns_requested_count() {
-    let problem = Problem::new(vec![Seat { x: 0, y: 0 }], vec![vec![0]], vec![vec![]]);
+    let problem = Problem::new(
+        vec![Seat { x: 0, y: 0 }],
+        vec![vec![(0, 1.0)]],
+        vec![vec![]],
+    );
 
     let mut ilsa = ILSA::new(&problem, 1);
     let candidates = ilsa.solve_candidates(10, 5);

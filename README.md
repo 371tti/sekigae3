@@ -2,45 +2,19 @@
 座席最適化システムすね  
 ユーザーに座りたい席のアンケートをとり、座席配置を最適化します
 
-## memo
-- [ ] セッションidはtimestamp入れる
+## library usage
+`sekigae3` は席替え用の割り当て最適化エンジンてすてす。
 
-## api
-- POST `/api/create`  
-  席替えセッションを作成します  
-  
-  リクエスト内容
-  - 座席形状`[[bool..]..]`
-  - ユーザーセット`[(number, ?name)..]`
-  
-  レスポンス内容
-  - id`<id>`
+```rust
+use sekigae3::{ILSA, Problem, Seat};
 
-- GET `/<id>` 
-  フォーラム画面です  
-  管理者はアンケートの締め切りと席替えの実行
-  ユーザーはアンケートを入力することができます
+let seats = vec![Seat { x: 0, y: 0 }];
+let want_seats = vec![vec![(0u16, 1.0f32)]];
+let pair_edges = vec![Vec::<(u16, f32)>::new()];
 
-- DELETE `/api/<id>/del`
-  席替えを削除します
+let problem = Problem::new(seats, want_seats, pair_edges);
+let mut solver = ILSA::new(&problem, 42);
+let best = solver.solve(10);
 
-- GET `/api/<id>/sekigae`
-  席替え結果を取得します
-
-- GET `/api/<id>/info`
-  席替えの情報を取得します
-  設定など
-  - 重みが調整可能か
-
-- GET `/api/<id>/user/list`
-  ユーザーの番号リストを取得します
-
-- GET `/api/<id>/user/<number>/get`
-  ユーザーの情報(希望席など)を取得します
-
-- POST `/api/<id>/user/<number>/set`
-  ユーザーの情報を指定します
-  
-  リクエスト内容
-  - 名前
-  - 座席指定
+println!("cost = {}", best.cost());
+```
