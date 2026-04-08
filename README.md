@@ -63,6 +63,9 @@ fn main() {
 
     println!("best cost: {:.3}", best.cost());
     println!("seat -> student: {:?}", best.by_seat());
+    //      Finished `release` profile [optimized] target(s) in 0.02s
+    //      Running `target\release\sekigae3.exe`
+    // best cost: 18.200
+    // seat -> student: [1, 2, 3, 5, 4, 0, 8, 7, 6]
 }
-
 ```
