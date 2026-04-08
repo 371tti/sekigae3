@@ -1,145 +1,107 @@
-use std::sync::Arc;
+use sekigae3::solver::{ILSA, Problem, Seat};
 
-use dashmap::DashMap;
+fn build_demo_problem() -> Problem {
+    let mut seats = Vec::new();
 
+    for y in 0..30 {
+        for x in 0..30 {
+            let is_border = x == 0 || y == 0 || x == 29 || y == 29;
+            let is_aisle = x % 7 == 0 || y % 6 == 0;
+            let blocked_core_a = (8..14).contains(&y) && (10..18).contains(&x);
+            let blocked_core_b = (16..23).contains(&y) && (4..11).contains(&x);
+            let sparse_pattern = (x + y) % 3 == 0;
+            let keep_sparse_lane = y % 5 == 0;
 
+            let available = !is_border
+                && !is_aisle
+                && !blocked_core_a
+                && !blocked_core_b
+                && (!sparse_pattern || keep_sparse_lane);
 
-
-
-
-use kurosabi::{kurosabi::Context, response::Res, Kurosabi};
-use rand::{distributions::Alphanumeric, rngs::OsRng, Rng};
-use sekigae3::{api::{ApiStruct, IDResult}, collector::Sekigae};
-
-struct SekigaeContext {
-    pub sekigae_sessions: DashMap<String, Sekigae>,
-}
-
-impl SekigaeContext {
-    fn new() -> Self {
-        SekigaeContext {
-            sekigae_sessions: DashMap::new(),
+            if available {
+                seats.push(Seat {
+                    x: x as i16,
+                    y: y as i16,
+                });
+            }
         }
     }
 
-    /// キーの生成
-    fn generate_key(&self) -> String {
-        let random_id: String = {
-            let mut rng = OsRng; // 暗号学的に安全な乱数生成器
-            (0..30).map(|_| rng.sample(Alphanumeric) as char).collect()
+    let n = seats.len();
+    assert!(n > 0, "at least one seat is required");
+
+    let front_zone: Vec<u16> = seats
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, s)| (s.y <= 7).then_some(idx as u16))
+        .collect();
+    let window_zone: Vec<u16> = seats
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, s)| (s.x <= 4 || s.x >= 24).then_some(idx as u16))
+        .collect();
+    let center_zone: Vec<u16> = seats
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, s)| {
+            ((11..=18).contains(&s.x) && (10..=20).contains(&s.y)).then_some(idx as u16)
+        })
+        .collect();
+
+    let mut want_seats = vec![Vec::<u16>::new(); n];
+    for (student, wants) in want_seats.iter_mut().enumerate() {
+        let anchor = (student * 97 + 31) % n;
+        wants.push(anchor as u16);
+        wants.push(((anchor + n / 3) % n) as u16);
+
+        let zone = match student % 3 {
+            0 => &front_zone,
+            1 => &window_zone,
+            _ => &center_zone,
         };
-        random_id
-    }
-
-    /// adminユーザーのキーを生成してCookieと席替えにセット
-    pub fn key_set(&self, sekigae_id: &str, c: &mut Context<Arc<SekigaeContext>>) {
-        let key = self.generate_key();
-        c.res.header.set_cookie(sekigae_id, &key);
-        self.sekigae_sessions.get_mut(sekigae_id).map(|mut s| {
-            s.admin_session = key.clone();
-        });
-    }
-
-    fn create_sekigae(&self, body: serde_json::Value) -> Result<Sekigae, serde_json::Error> {
-        let body_deserialized: ApiStruct = serde_json::from_value(body)?;
-
-        let sekigae = body_deserialized.convert();
-        Ok(Sekigae::new(
-            sekigae.0,
-            &self.generate_key(),
-        ))
-    }
-
-    /// Sekigaeセッションを作成する
-    /// # Arguments
-    /// * `c` - Kurosabiのコンテキスト
-    /// # Returns
-    /// * Result<String, String> - SekigaeセッションのID / エラーメッセージ
-    /// 
-    pub async fn create(&self, c: &mut Context<Arc<SekigaeContext>>) -> Result<String/* id */, String> {
-        let body = c.req.body_json().await.map_err(|_| "Failed to parse JSON".to_string())?;
-        let sekigae = self.create_sekigae(body).map_err(|_| "Failed to create Sekigae".to_string())?;
-        if self.sekigae_sessions.contains_key(&sekigae.id) {
-            return Err("Sekigae session already exists".to_string());
+        if !zone.is_empty() {
+            wants.push(zone[student % zone.len()]);
         }
-        let sekigae_id = sekigae.id.clone();
-        self.sekigae_sessions.insert(sekigae_id.clone(), sekigae);
-        Ok(sekigae_id)
-    }
-}
 
+        wants.sort_unstable();
+        wants.dedup();
+    }
+
+    let mut pair_edges = vec![Vec::<(u16, f32)>::new(); n];
+
+    let mut add_pair = |a: usize, b: usize, w: f32| {
+        if a == b {
+            return;
+        }
+        if pair_edges[a].iter().any(|&(other, _)| other as usize == b) {
+            return;
+        }
+        pair_edges[a].push((b as u16, w));
+        pair_edges[b].push((a as u16, w));
+    };
+
+    for i in 0..n {
+        let near = (i + 1) % n;
+        let rowmate = (i + 29) % n;
+        let randomish = (i * 37 + 11) % n;
+        add_pair(i, near, 1.0);
+        add_pair(i, rowmate, 0.8);
+        add_pair(i, randomish, 0.6);
+    }
+
+    Problem::new(seats, want_seats, pair_edges)
+}
 
 fn main() {
-    let arc_context = Arc::new(SekigaeContext::new());
-    let mut kurosabi = Kurosabi::with_context(arc_context);
+    let problem = build_demo_problem();
+    println!("students/seats: {}", problem.student_count());
 
-    
-    kurosabi.get("/", |mut c| async move {
-        let html = r#"
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>API Test</title>
-        </head>
-        <body>
-            <h1>Test /api/create</h1>
-            <form id="apiForm">
-                <textarea id="jsonInput" rows="10" cols="50">
-{
-    "seat_structure": {
-        "rows": 3,
-        "columns": 4
-    },
-    "user_set": [
-        [1, "Alice"],
-        [2, "Bob"],
-        [3, null]
-    ]
-}
-                </textarea>
-                <br>
-                <button type="button" onclick="sendRequest()">Send</button>
-            </form>
-            <h2>Response:</h2>
-            <pre id="responseOutput"></pre>
-            <script>
-                async function sendRequest() {
-                    const jsonInput = document.getElementById("jsonInput").value;
-                    try {
-                        const response = await fetch('/api/create', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: jsonInput
-                        });
-                        const responseData = await response.json();
-                        document.getElementById("responseOutput").textContent = JSON.stringify(responseData, null, 2);
-                    } catch (error) {
-                        document.getElementById("responseOutput").textContent = "Error: " + error;
-                    }
-                }
-            </script>
-        </body>
-        </html>
-        "#;
-        c.res.html(html);
-        c
-    });
+    let mut ilsa = ILSA::new(&problem, 0);
+    let candidates = ilsa.solve_candidates(200, 5);
 
-    kurosabi.post("/api/create", |mut c| async move {
-        let context = Arc::clone(&c.c);
-        let result = context.create(&mut c).await;
-        let res_json = serde_json::to_string(&IDResult::new(result)).unwrap();
-        c.res.json(&res_json);
-        c
-    });
-
-    kurosabi.server()
-        .host([127, 0, 0, 1])
-        .port(8080)
-        .build()
-        .run();
+    for (idx, cand) in candidates.iter().enumerate() {
+        println!("candidate #{}", idx + 1);
+        println!("  cost: {:.3}", cand.cost());
+        println!("  seat -> student: {:?}", cand.by_seat());
+    }
 }

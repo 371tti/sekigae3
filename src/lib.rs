@@ -1,2 +1,1 @@
-pub mod collector;
-pub mod api;
+pub mod solver;
