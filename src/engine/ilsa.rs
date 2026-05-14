@@ -2,6 +2,8 @@ use std::{cmp::Ordering, collections::HashSet};
 
 use log::{debug, info};
 
+use crate::{DistanceFn, engine::problem::DefaultDistanceFn};
+
 use super::{individual::Individual, problem::Problem, rng::SimpleRng};
 
 const IMPROVEMENT_EPSILON: f32 = 1e-6;
@@ -13,16 +15,16 @@ const CANDIDATE_POOL_MULTIPLIER: usize = 8;
 /// ILSA 探索エンジン。
 ///
 /// `Problem` を参照し、`solve` / `solve_candidates` で解を生成します。
-pub struct ILSA<'p> {
-    problem: &'p Problem,
+pub struct ILSA<'p, D: DistanceFn = DefaultDistanceFn> {
+    problem: &'p Problem<D>,
     rng: SimpleRng,
 }
 
-impl<'p> ILSA<'p> {
+impl<'p, D: DistanceFn> ILSA<'p, D> {
     /// 新規インスタンスを作成します。
     ///
     /// `seed = 0` の場合はシステム乱数を使って初期化します。
-    pub fn new(problem: &'p Problem, seed: u64) -> Self {
+    pub fn new(problem: &'p Problem<D>, seed: u64) -> Self {
         let rng = SimpleRng::new(seed);
         Self { problem, rng }
     }
@@ -267,7 +269,7 @@ impl<'p> ILSA<'p> {
     }
 
     /// 2-swap ヒルクライム（最良改善を即時採用）
-    fn hill_climb(ind: &mut Individual, prob: &Problem) {
+    fn hill_climb(ind: &mut Individual, prob: &Problem<D>) {
         let n = ind.by_seat.len();
         if n < 2 {
             ind.cost = Individual::calc_cost(prob, &ind.seat_of);
@@ -319,7 +321,7 @@ impl<'p> ILSA<'p> {
     }
 
     /// 座席を k 回ランダム swap して大ジャンプを作る
-    fn random_k_swaps(ind: &mut Individual, k: usize, prob: &Problem, rng: &mut SimpleRng) {
+    fn random_k_swaps(ind: &mut Individual, k: usize, prob: &Problem<D>, rng: &mut SimpleRng) {
         let n = ind.by_seat.len();
         if n < 2 {
             ind.cost = Individual::calc_cost(prob, &ind.seat_of);

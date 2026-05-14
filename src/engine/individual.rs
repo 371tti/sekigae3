@@ -1,3 +1,5 @@
+use crate::DistanceFn;
+
 use super::{problem::Problem, rng::SimpleRng};
 
 /// 個体：座席割当とコスト
@@ -11,7 +13,7 @@ pub struct Individual {
 }
 
 impl Individual {
-    pub(crate) fn new_random(problem: &Problem, rng: &mut SimpleRng) -> Self {
+    pub(crate) fn new_random<D: DistanceFn>(problem: &Problem<D>, rng: &mut SimpleRng) -> Self {
         let mut by_seat: Vec<u16> = (0..problem.student_count() as u16).collect();
         rng.shuffle(&mut by_seat);
         let seat_of = Self::inverse(&by_seat);
@@ -34,7 +36,7 @@ impl Individual {
     }
 
     /// 総コストを計算
-    pub(crate) fn calc_cost(problem: &Problem, seat_of: &[u16]) -> f32 {
+    pub(crate) fn calc_cost<D: DistanceFn>(problem: &Problem<D>, seat_of: &[u16]) -> f32 {
         let mut cost = 0.0f32;
 
         // 個人希望
@@ -68,7 +70,7 @@ impl Individual {
     }
 
     /// 2 座席 swap の差分コストを計算
-    pub(crate) fn delta_swap_cost(&self, problem: &Problem, i: usize, j: usize) -> f32 {
+    pub(crate) fn delta_swap_cost<D: DistanceFn>(&self, problem: &Problem<D>, i: usize, j: usize) -> f32 {
         if i == j {
             return 0.0;
         }

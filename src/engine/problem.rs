@@ -53,26 +53,6 @@ impl<D: DistanceFn> Problem<D> {
             distance_fn,
         }
     }
-}
-
-impl Problem {
-    /// 問題を構築します。
-    ///
-    /// - `seats`: 使用可能な座席一覧
-    /// - `want_seats[student]`: 学生ごとの希望座席候補 `(seat_id, weight)`
-    /// - `pair_edges[student]`: 学生ごとの関係重み (相手ID, 重み)
-    pub fn new(
-        seats: Vec<Seat>,
-        want_seats: Vec<Vec<WeightedSeatPref>>,
-        pair_edges: Vec<Vec<WeightedSeatPref>>,
-    ) -> Self {
-        Self {
-            seats,
-            want_seats,
-            pair_edges,
-            distance_fn: DefaultDistanceFn,
-        }
-    }
 
     #[inline]
     /// 座席数を返します。
@@ -93,5 +73,25 @@ impl Problem {
         let sa = self.seats[a as usize];
         let sb = self.seats[b as usize];
         self.distance_fn.distance((sa.x, sa.y), (sb.x, sb.y))
+    }
+}
+
+impl Problem<DefaultDistanceFn> {
+    /// 問題を構築します。
+    ///
+    /// - `seats`: 使用可能な座席一覧
+    /// - `want_seats[student]`: 学生ごとの希望座席候補 `(seat_id, weight)`
+    /// - `pair_edges[student]`: 学生ごとの関係重み (相手ID, 重み)
+    pub fn new(
+        seats: Vec<Seat>,
+        want_seats: Vec<Vec<WeightedSeatPref>>,
+        pair_edges: Vec<Vec<WeightedSeatPref>>,
+    ) -> Self {
+        Self {
+            seats,
+            want_seats,
+            pair_edges,
+            distance_fn: DefaultDistanceFn,
+        }
     }
 }
