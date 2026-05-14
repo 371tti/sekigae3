@@ -14,7 +14,7 @@ fn build_simple_problem() -> Problem {
     ];
 
     // want_seats[student] = [(seat_id, weight)]
-    let want_seats = (0..9).map(|i| vec![]).collect(); // 全員無関心 ペア整合の確認用
+    let want_seats = (0..9).map(|_i| vec![]).collect(); // 全員無関心 ペア整合の確認用
     // let want_seats = vec![
     //     vec![(8, 1.0), (4, 0.7)],           // 学生0は席0が一番好きで、席4もまあまあ好き
     //     vec![(7, 1.0), (4, 0.6)],           // 学生1は席1が一番好きで、席4もまあまあ好き

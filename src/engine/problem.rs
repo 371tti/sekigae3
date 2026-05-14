@@ -10,10 +10,22 @@ pub struct Seat {
 /// 希望座席 `(seat_id, weight)`。
 pub type WeightedSeatPref = (u16, f32);
 
+pub trait DistanceFn {
+    fn distance(&self, a: (i16, i16), b: (i16, i16)) -> u16;
+}
+
+pub struct DefaultDistanceFn;
+
+impl DistanceFn for DefaultDistanceFn {
+    fn distance(&self, a: (i16, i16), b: (i16, i16)) -> u16 {
+        ((a.0 - b.0).abs() + (a.1 - b.1).abs()) as u16
+    }
+}
+
 /// 最適化問題定義。
 ///
 /// すべてのベクタ長は座席数と整合していることを想定します。
-pub struct Problem {
+pub struct Problem<D: DistanceFn = DefaultDistanceFn> {
     /// 有効な座席一覧（index が SeatId になる）
     pub seats: Vec<Seat>,
     /// 生徒ごとの希望座席のリスト
@@ -22,6 +34,25 @@ pub struct Problem {
     /// 生徒ごとの (相手, 重み f32) 隣接リスト
     /// pair_edges[student] -> [(other, weight)]
     pub pair_edges: Vec<Vec<WeightedSeatPref>>,
+    /// 距離関数
+    pub distance_fn: D,
+}
+
+impl<D: DistanceFn> Problem<D> {
+    /// 距離関数を指定して問題を構築します。
+    pub fn with_distance_fn(
+        seats: Vec<Seat>,
+        want_seats: Vec<Vec<WeightedSeatPref>>,
+        pair_edges: Vec<Vec<WeightedSeatPref>>,
+        distance_fn: D,
+    ) -> Self {
+        Self {
+            seats,
+            want_seats,
+            pair_edges,
+            distance_fn,
+        }
+    }
 }
 
 impl Problem {
@@ -39,6 +70,7 @@ impl Problem {
             seats,
             want_seats,
             pair_edges,
+            distance_fn: DefaultDistanceFn,
         }
     }
 
