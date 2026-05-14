@@ -29,7 +29,7 @@ mod rng;
 
 pub use ilsa::ILSA;
 pub use individual::Individual;
-pub use problem::{Problem, Seat, WeightedSeatPref};
+pub use problem::{Problem, Seat, WeightedSeatPref, DistanceFn};
 
 #[cfg(test)]
 mod tests;

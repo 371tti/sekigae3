@@ -30,4 +30,4 @@
 
 pub mod engine;
 
-pub use engine::{ILSA, Individual, Problem, Seat, WeightedSeatPref};
+pub use engine::{ILSA, Individual, Problem, Seat, WeightedSeatPref, DistanceFn};
