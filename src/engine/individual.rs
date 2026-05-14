@@ -45,7 +45,7 @@ impl Individual {
             let seat = seat_of[student] as u16;
             let mut best = f32::INFINITY;
             for &(ws, w) in wants {
-                let d = problem.manhattan(seat, ws) as f32 * w;
+                let d = problem.distance(seat, ws) as f32 * w;
                 if d < best {
                     best = d;
                 }
@@ -61,7 +61,7 @@ impl Individual {
                     continue;
                 }
                 let seat_b = seat_of[b as usize] as u16;
-                cost += w * (problem.manhattan(seat_a, seat_b) as f32);
+                cost += w * (problem.distance(seat_a, seat_b) as f32);
             }
         }
         cost
@@ -91,11 +91,11 @@ impl Individual {
             let new_seat = if student == a { seat_a_new } else { seat_b_new };
             let old_best = wants
                 .iter()
-                .map(|&(ws, w)| problem.manhattan(old_seat, ws) as f32 * w)
+                .map(|&(ws, w)| problem.distance(old_seat, ws) as f32 * w)
                 .fold(f32::INFINITY, f32::min);
             let new_best = wants
                 .iter()
-                .map(|&(ws, w)| problem.manhattan(new_seat, ws) as f32 * w)
+                .map(|&(ws, w)| problem.distance(new_seat, ws) as f32 * w)
                 .fold(f32::INFINITY, f32::min);
             delta += new_best - old_best;
         }
@@ -109,8 +109,8 @@ impl Individual {
             } else {
                 seat_other_old
             };
-            let old = problem.manhattan(seat_a_old, seat_other_old) as f32;
-            let new = problem.manhattan(seat_a_new, seat_other_new) as f32;
+            let old = problem.distance(seat_a_old, seat_other_old) as f32;
+            let new = problem.distance(seat_a_new, seat_other_new) as f32;
             delta += w * (new - old);
         }
         for &(other, w) in &problem.pair_edges[b] {
@@ -121,8 +121,8 @@ impl Individual {
             } else {
                 seat_other_old
             };
-            let old = problem.manhattan(seat_b_old, seat_other_old) as f32;
-            let new = problem.manhattan(seat_b_new, seat_other_new) as f32;
+            let old = problem.distance(seat_b_old, seat_other_old) as f32;
+            let new = problem.distance(seat_b_new, seat_other_new) as f32;
             delta += w * (new - old);
         }
         delta

@@ -89,9 +89,9 @@ impl Problem {
     }
 
     #[inline]
-    pub(crate) fn manhattan(&self, a: u16, b: u16) -> u16 {
+    pub(crate) fn distance(&self, a: u16, b: u16) -> u16 {
         let sa = self.seats[a as usize];
         let sb = self.seats[b as usize];
-        ((sa.x - sb.x).abs() + (sa.y - sb.y).abs()) as u16
+        self.distance_fn.distance((sa.x, sa.y), (sb.x, sb.y))
     }
 }
